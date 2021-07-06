@@ -9,8 +9,20 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-app.get('/', (req, res) => {
-  res.send("hello!");
+app.get('/urls', (req, res) => {
+  const templateVars = { urls: urlDatabase }
+  res.render("urls_index", templateVars)
+})
+
+  app.get("/urls/:shortURL", (req, res) => {
+  // by defining these variables prior to placing them into template vars it makes it much easier to understand
+  // short URL is a few letter encoded url
+  const shortURL = req.params.shortURL
+  // Long url is the full length of our URL in an unshortended state
+  const longURL = urlDatabase[shortURL]
+  // Template vars contains both our values
+  const templateVars = { shortURL, longURL }
+  res.render("urls_show", templateVars);
 });
 
 app.get("/urls.json", (req, res) => {
