@@ -33,7 +33,12 @@ app.get(`/u/:shortURL`, (req, res) => {
 app.post("/urls", (req, res) => {
   console.log(req.body.longURL) //logs the POST request
   let shortString = generateRandomString()
-  urlDatabase[shortString] = req.body.longURL
+  if(!req.body.longURL.startsWith("http://")) {
+    let starting = 'http://'
+    urlDatabase[shortString] = starting + req.body.longURL
+  } else {
+    urlDatabase[shortString] = req.body.longURL
+  }
   console.log(urlDatabase)
   res.redirect(`/urls/${shortString}`)
 })
@@ -47,20 +52,25 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 })
 
-  app.get("/urls/:shortURL", (req, res) => {
-  // by defining these variables prior to placing them into template vars it makes it much easier to understand
-  // short URL is a few letter encoded url
-  const shortURL = req.params.shortURL
-  // Long url is the full length of our URL in an unshortended state
-  const longURL = urlDatabase[shortURL]
-  // Template vars contains both our values
-  const templateVars = { shortURL, longURL }
-  res.render("urls_show", templateVars);
+app.get("/urls/:shortURL", (req, res) => {
+// by defining these variables prior to placing them into template vars it makes it much easier to understand
+// short URL is a few letter encoded url
+const shortURL = req.params.shortURL
+// Long url is the full length of our URL in an unshortended state
+const longURL = urlDatabase[shortURL]
+// Template vars contains both our values
+const templateVars = { shortURL, longURL }
+res.render("urls_show", templateVars);
 });
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase)
 }) 
+
+app.post(("/urls/:shortURL/delete"), (req, res) => {
+  delete urlDatabase[req.params.shortURL]
+  res.redirect("/urls")
+})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
