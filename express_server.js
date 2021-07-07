@@ -105,23 +105,26 @@ app.post(("/urls/:shortURL/delete"), (req, res) => {
 });
 
 app.get(("/login"), (req, res) => {
-  res.redirect("/urls");
+  const user = userDB[req.cookies["id"]];
+  const templateVars = { user };
+  templateVars.message = null;
+  res.render("urls_login", templateVars);
 });
 
 app.post(("/login"), (req, res) => {
-  console.log("user trying to login:", req.body.email);
   const attemptedLoginEmail = req.body.email;
   const attemptedLoginPassword = req.body.password;
 
   for (const user in userDB) {
-    if (userDB[user].email === attemptedLoginEmail) {
+    // if ( userDB[user].email === attemptedLoginEmail) {
+    if ( userExistsChecker(attemptedLoginEmail)) {
       if (userDB[user].password === attemptedLoginPassword) {
-        console.log('Login Sucessful');
         res.cookie("id", user);
+        res.redirect("/urls")
       }
     }
   }
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 app.post(("/logout"), (req, res) => {
