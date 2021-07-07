@@ -13,6 +13,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const userDB = {
+   "jamieID": {
+    id: 1,
+    email: "jamie's@email.com", 
+    password: "123"
+  },
+    "testID": {
+      id: 2,
+      email: "test@email.com",
+      password: "123"
+    }
+}
+
 function generateRandomString() {
     var result           = '';
     var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -93,9 +106,28 @@ app.post(("/logout"), (req, res) => {
   res.redirect("/urls")
 })
 
+app.post("/register", (req, res) => {
+  let userID = generateRandomString()
+  userDB[userID] = {
+    id: userID,
+    email: req.body.email,
+    password: req.body.password
+  }
+  console.log(userDB[userID])
+  res.cookie("id", userID)
+  res.redirect("/urls")
+})
+
+app.get("/register", (req, res) => {
+  const templateVars = { urls: urlDatabase, username: req.cookies['username'] }
+  res.render("urls_register", templateVars)
+})
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
+
 
 /*
 Things to implement:
