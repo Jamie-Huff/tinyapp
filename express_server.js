@@ -24,9 +24,7 @@ function generateRandomString() {
 }
 
 app.get(`/u/:shortURL`, (req, res) => {
-  // must specify http:// at the start of it
   const longURL = urlDatabase[req.params.shortURL]
-// http://localhost:8080/u/undefined
   res.redirect(longURL);
 });
 
@@ -44,9 +42,6 @@ app.post("/urls", (req, res) => {
 
 app.get('/urls', (req, res) => {
   const templateVars = { urls: urlDatabase, username: req.cookies['username'] }
-  console.log('/urls get:',templateVars)
-  console.log('/urls get:',templateVars.urls)
-  console.log('/urls get:',req.cookies['username'])
   res.render("urls_index", templateVars)
 })
 
