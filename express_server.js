@@ -26,6 +26,14 @@ const userDB = {
   }
 };
 
+const userExistsChecker = function(email) {
+  for (const user in userDB) {
+    if(userDB[user].email === email) {
+      return true;
+    }
+  }
+  return false;
+};
 
 const generateRandomString = function() {
   let result           = '';
@@ -105,9 +113,7 @@ app.post(("/login"), (req, res) => {
   const attemptedLoginEmail = req.body.email;
   const attemptedLoginPassword = req.body.password;
 
-  
   for (const user in userDB) {
-    console.log(userDB[user].email);
     if (userDB[user].email === attemptedLoginEmail) {
       if (userDB[user].password === attemptedLoginPassword) {
         console.log('Login Sucessful');
@@ -132,7 +138,11 @@ app.post("/register", (req, res) => {
   if (!email || !password) {
     templateVars.message = "Error 400 - Bad Request";
     res.render("urls_register", templateVars);
-  } else {
+  } else if (userExistsChecker(email)) {
+    templateVars.message = "email already associated with an account";
+    res.render("urls_register", templateVars);
+  }
+  else {
     userDB[userID] = {
       id: userID,
       email: req.body.email,
