@@ -39,8 +39,6 @@ app.post("/urls", (req, res) => {
   } else {
     urlDatabase[shortString] = req.body.longURL
   }
-  urlDatabase[shortString] = req.body.longURL
-  console.log(urlDatabase)
   res.redirect(`/urls/${shortString}`)
 })
 
