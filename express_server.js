@@ -1,10 +1,11 @@
 const express = require("express");
-const app = express();
-const PORT = 8080;
-
+const cookieParser = require('cookie-parser')
 const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({extended: true}));
+const PORT = 8080;
+const app = express();
 
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser())
 app.set("view engine", "ejs");
 
 const urlDatabase = {
@@ -17,8 +18,7 @@ function generateRandomString() {
     var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     var charactersLength = characters.length;
     for ( var i = 0; i < 6; i++ ) {
-      result += characters.charAt(Math.floor(Math.random() * 
- charactersLength));
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
    }
    return result;
 }
@@ -43,22 +43,34 @@ app.post("/urls", (req, res) => {
 })
 
 app.get('/urls', (req, res) => {
-  const templateVars = { urls: urlDatabase }
+  const templateVars = { urls: urlDatabase, username: req.cookies['username'] }
+  console.log('/urls get:',templateVars)
+  console.log('/urls get:',templateVars.urls)
+  console.log('/urls get:',req.cookies['username'])
   res.render("urls_index", templateVars)
 })
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = { 
+    urls: urlDatabase,
+    username: req.cookies['username']
+   }
+  //  if (req.cookies['username']) {
+  //    templateVars.username = req.cookies['username']
+  //  }
+  res.render("urls_new", templateVars);
 })
 
 app.get("/urls/:shortURL", (req, res) => {
-// by defining these variables prior to placing them into template vars it makes it much easier to understand
-// short URL is a few letter encoded url
 const shortURL = req.params.shortURL
-// Long url is the full length of our URL in an unshortended state
 const longURL = urlDatabase[shortURL]
-// Template vars contains both our values
-const templateVars = { shortURL, longURL }
+
+const templateVars = { 
+  shortURL, 
+  longURL,
+  username: req.cookies['username']
+  }
+
 res.render("urls_show", templateVars);
 });
 
@@ -66,14 +78,14 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase)
 }) 
 
-app.post(("/urls/:shortURL/delete"), (req, res) => {
-  delete urlDatabase[req.params.shortURL]
-  res.redirect("/urls")
-})
-
 app.post(("/urls/:shortURL"), (req, res) => {
   urlDatabase[req.params.shortURL] = req.body.longURL
   res.redirect(`/urls/${req.params.shortURL}`)
+})
+
+app.post(("/urls/:shortURL/delete"), (req, res) => {
+  delete urlDatabase[req.params.shortURL]
+  res.redirect("/urls")
 })
 
 app.post(("/login"), (req, res) => {
@@ -81,6 +93,18 @@ app.post(("/login"), (req, res) => {
   res.redirect("/urls")
 })
 
+app.post(("/logout"), (req, res) => {
+  res.clearCookie('username')
+  res.redirect("/urls")
+})
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
+/*
+Things to implement:
+
+1. Short URL doesn't work if it does not start with http://
+
+*/
