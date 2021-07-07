@@ -35,6 +35,15 @@ const userExistsChecker = function(email) {
   return false;
 };
 
+const userPasswordChecker = function(password) {
+  for (const user in userDB) {
+    if(userDB[user].password === password) {
+      return true;
+    }
+  }
+  return false;
+};
+
 const generateRandomString = function() {
   let result           = '';
   let characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -114,17 +123,25 @@ app.get(("/login"), (req, res) => {
 app.post(("/login"), (req, res) => {
   const attemptedLoginEmail = req.body.email;
   const attemptedLoginPassword = req.body.password;
+  const templateVars = { user: null};
 
   for (const user in userDB) {
     // if ( userDB[user].email === attemptedLoginEmail) {
-    if ( userExistsChecker(attemptedLoginEmail)) {
-      if (userDB[user].password === attemptedLoginPassword) {
+    if (userExistsChecker(attemptedLoginEmail)) {
+      //if (userDB[user].password === attemptedLoginPassword) {
+      if (userPasswordChecker(attemptedLoginPassword)) {
         res.cookie("id", user);
-        res.redirect("/urls")
+        res.redirect("/urls");
+        return;
+      } else {
+        templateVars.message = "Error 403 - password is invalid";
+        return res.render("urls_login", templateVars);
       }
+    } else if (!userExistsChecker(attemptedLoginEmail)) {
+      templateVars.message = "Error 403 - email is not associated with an account";
+      return res.render("urls_login", templateVars);
     }
   }
-  res.redirect("/login");
 });
 
 app.post(("/logout"), (req, res) => {
@@ -140,12 +157,11 @@ app.post("/register", (req, res) => {
 
   if (!email || !password) {
     templateVars.message = "Error 400 - Bad Request";
-    res.render("urls_register", templateVars);
+    return res.render("urls_register", templateVars);
   } else if (userExistsChecker(email)) {
     templateVars.message = "email already associated with an account";
-    res.render("urls_register", templateVars);
-  }
-  else {
+    return res.render("urls_register", templateVars);
+  } else {
     userDB[userID] = {
       id: userID,
       email: req.body.email,

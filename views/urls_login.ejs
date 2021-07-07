@@ -18,7 +18,12 @@
             <input type="username" name="email" style="margin-right: 10px" class="form-control rounded" style="width: 300px" placeholder="username" aria-label="Search" />
             <input type="password" name="password" style="margin-right: 10px" class="form-control rounded" style="width: 300px" placeholder="password" aria-label="Search"/>
             <button type="submit" class="btn btn-secondary active">Login</button>
-      </div>
+
+        </div>
+        <div> <% if (message) { %>
+              <%= message %>
+              <% } %>
+        </div>
       </form>
       <div>
       </div>
