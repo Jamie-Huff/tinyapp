@@ -54,31 +54,30 @@ app.post("/urls", (req, res) => {
 })
 
 app.get('/urls', (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies['username'] }
+  const user = userDB[req.cookies["id"]]
+  const templateVars = { urls: urlDatabase, user} // this is the cookie being created when we make a new account
+
   res.render("urls_index", templateVars)
 })
 
 app.get("/urls/new", (req, res) => {
+  const user = userDB[req.cookies["id"]]
   const templateVars = { 
     urls: urlDatabase,
-    username: req.cookies['username']
+    user,
    }
-  //  if (req.cookies['username']) {
-  //    templateVars.username = req.cookies['username']
-  //  }
   res.render("urls_new", templateVars);
 })
 
 app.get("/urls/:shortURL", (req, res) => {
 const shortURL = req.params.shortURL
 const longURL = urlDatabase[shortURL]
-
+const user = userDB[req.cookies["id"]]
 const templateVars = { 
-  shortURL, 
+  shortURL,
   longURL,
-  username: req.cookies['username']
+  user,
   }
-
 res.render("urls_show", templateVars);
 });
 
@@ -96,13 +95,18 @@ app.post(("/urls/:shortURL/delete"), (req, res) => {
   res.redirect("/urls")
 })
 
+app.get(("/login"), (req, res) => {
+
+})
+
 app.post(("/login"), (req, res) => {
-  res.cookie("username", req.body.username)
+  console.log("user trying to login:", req.body.email)
+  res.cookie("username", userDB.email)
   res.redirect("/urls")
 })
 
 app.post(("/logout"), (req, res) => {
-  res.clearCookie('username')
+  res.clearCookie('id')
   res.redirect("/urls")
 })
 
@@ -119,7 +123,8 @@ app.post("/register", (req, res) => {
 })
 
 app.get("/register", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies['username'] }
+  const user = userDB[req.cookies["id"]]
+  const templateVars = { user }
   res.render("urls_register", templateVars)
 })
 
