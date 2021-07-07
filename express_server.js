@@ -134,11 +134,11 @@ app.post(("/login"), (req, res) => {
         res.redirect("/urls");
         return;
       } else {
-        templateVars.message = "Error 403 - password is invalid";
+        templateVars.message = "Error 403 - Password is invalid.";
         return res.render("urls_login", templateVars);
       }
     } else if (!userExistsChecker(attemptedLoginEmail)) {
-      templateVars.message = "Error 403 - email is not associated with an account";
+      templateVars.message = "Error 403 - Email is not associated with an account.";
       return res.render("urls_login", templateVars);
     }
   }
@@ -156,10 +156,10 @@ app.post("/register", (req, res) => {
   const templateVars = { user: null};
 
   if (!email || !password) {
-    templateVars.message = "Error 400 - Bad Request";
+    templateVars.message = "Error 400 - Bad request - Email or Password fields cannot be empty.";
     return res.render("urls_register", templateVars);
   } else if (userExistsChecker(email)) {
-    templateVars.message = "email already associated with an account";
+    templateVars.message = "Email already associated with an account.";
     return res.render("urls_register", templateVars);
   } else {
     userDB[userID] = {
