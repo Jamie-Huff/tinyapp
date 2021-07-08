@@ -29,7 +29,7 @@
             <td><%= urls[url].shortURL %></td>
             <td><%= urls[url].longURL %></td>
             <td><a href="/urls/<%=urls[url].shortURL%>/" class="btn btn-outline-success">Edit</a></td>
-            <td><form method="POST" action="/urls/<%=urls[url].shortURL%>/delete"><button type = "submit" class="btn btn-outline-danger">Delete</button></form></td>
+            <td><form method="POST" action="/urls/<%=urls[url].shortURL%>/delete" text="<%=urls[url].shortURL%>"><button type = "submit" class="btn btn-outline-danger">Delete</button></form></td>
           </tr>
         <% } %>
       <% } else {%>
