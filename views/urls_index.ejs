@@ -23,15 +23,22 @@
         </tr>
       </thead>
       <tbody>
+      <% if (user) { %>
         <% for(let url in urls) { %>
           <tr>
             <td><%= urls[url].shortURL %></td>
             <td><%= urls[url].longURL %></td>
             <td><a href="/urls/<%=urls[url].shortURL%>/" class="btn btn-outline-success">Edit</a></td>
             <td><form method="POST" action="/urls/<%=urls[url].shortURL%>/delete"><button type = "submit" class="btn btn-outline-danger">Delete</button></form></td>
-            
           </tr>
         <% } %>
+      <% } else {%>
+        <h3> Please login to view your created links, or register for a new account.</h3>
+        <div>
+          <a href="/login" class="btn btn-secondary active" style="margin-bottom: 30px;width: 150px">Login</a>
+          <a href="/register" class="btn btn-secondary active" style="margin-bottom: 30px; width: 150px">Register</a>
+        </div>
+      <% } %>
       </tbody>
     </table>
   </main>
