@@ -16,6 +16,8 @@ app.use(cookieSession({
 }));
 app.set("view engine", "ejs");
 
+/* urlDatabase contains the longURL's shortstring as its key. User ID represents the user who created the link */
+
 const urlDatabase = {
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
@@ -26,7 +28,8 @@ const urlDatabase = {
     userID: 2
   },
 };
-
+// No passwords are stored in plain text, only in a hashed and salted format.
+// User Id's are randomly generated strings 
 const userDB = {
   1: {
     id: 1,
@@ -40,6 +43,7 @@ const userDB = {
   }
 };
 
+// Homepage.
 app.get('/', (req, res) => {
   let user = userDB[req.session.user_id];
   if (!user) {
@@ -49,6 +53,7 @@ app.get('/', (req, res) => {
   }
 });
 
+// Link sends client to longURL's webpage if defined.
 app.get(`/u/:shortURL`, (req, res) => {
   let longURL = urlDatabase[req.params.shortURL];
   if (!urlDatabase[req.params.shortURL]) {
@@ -58,11 +63,13 @@ app.get(`/u/:shortURL`, (req, res) => {
   res.redirect(longURL);
 });
 
+// POST to add new urls to a user's /urls page.
 app.post("/urls", (req, res) => {
   let shortString = generateRandomString();
   let user = userDB[req.session.user_id];
   user = user.id;
-  if (!req.body.longURL.startsWith("http://")) {
+// Ensures all URLS start with http:// if they don't already.
+  if (!req.body.longURL.startsWith("http://" || "https://")) {
     let starting = 'http://';
     urlDatabase[shortString] = { longURL: starting + req.body.longURL, userID: user };
   } else {
@@ -71,6 +78,7 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortString}`);
 });
 
+// Access a users urls, only available to the relative user
 app.get('/urls', (req, res) => {
   let user = userDB[req.session.user_id];
   let userID = '';
@@ -86,6 +94,7 @@ app.get('/urls', (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+// GET request to create a new page. Only accessable to users who are logged in to a profile, otherwise redirects to /login.
 app.get("/urls/new", (req, res) => {
   let user = userDB[req.session.user_id];
   if (!user) {
@@ -93,7 +102,6 @@ app.get("/urls/new", (req, res) => {
     templateVars.message = 'Please login, or create an account to access this feature.';
     return res.render("urls_login", templateVars);
   }
-
   const templateVars = {
     urls: urlDatabase,
     user,
@@ -101,6 +109,8 @@ app.get("/urls/new", (req, res) => {
   return res.render("urls_new", templateVars);
 });
 
+// Page accessed after creating a new url || selecting edit on the /urls page. 
+// Only available to the creating user of that relative url.
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   let longURL = urlDatabase[shortURL];
@@ -108,11 +118,9 @@ app.get("/urls/:shortURL", (req, res) => {
     res.status(404).send('<h1>Error 404 - Page does not exist.</h1>');
   }
   let user = userDB[req.session.user_id];
-
   if (!user || user.id !== urlDatabase[shortURL].userID) {
     return res.status(401).send('<h1>Error 401 - You are not authorized to access this page.</h1>');
   }
-
   longURL = longURL.longURL;
   const templateVars = {
     shortURL,
@@ -126,6 +134,8 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+// POST for when a user changes the longURL of a pre existing link, checks for http:// || https://. 
+// Only available to the creator of that link.
 app.post(("/urls/:shortURL"), (req, res) => {
   let user = userDB[req.session.user_id];
   user = user.id;
@@ -136,6 +146,7 @@ app.post(("/urls/:shortURL"), (req, res) => {
   res.redirect(`/urls/${req.params.shortURL}`);
 });
 
+// POST to delete a pre existing link, only available to the creator of that link.
 app.post(("/urls/:shortURL/delete"), (req, res) => {
   const user = userDB[req.session.user_id];
   const shortURL = req.params.shortURL;
@@ -152,6 +163,7 @@ app.post(("/urls/:shortURL/delete"), (req, res) => {
   res.redirect("/urls");
 });
 
+// Access the login page, if user is already logged in, redirects to /urls.
 app.get(("/login"), (req, res) => {
   const user = userDB[req.session.user_id];
   if (user) {
@@ -162,6 +174,7 @@ app.get(("/login"), (req, res) => {
   res.render("urls_login", templateVars);
 });
 
+// Login to an account. Gives relative errors depending on the issue.
 app.post(("/login"), (req, res) => {
   const attemptedLoginEmail = req.body.email;
   const attemptedLoginPassword = req.body.password;
@@ -182,11 +195,13 @@ app.post(("/login"), (req, res) => {
   }
 });
 
+// Logout and clear cookies for client.
 app.post(("/logout"), (req, res) => {
   req.session = null;
   res.redirect("/urls");
 });
 
+// Create new user. Sends errors for empty fields, or if an email is already being used.
 app.post("/register", (req, res) => {
   let userID = generateRandomString();
   const email = req.body.email;
@@ -214,6 +229,7 @@ app.post("/register", (req, res) => {
 
 });
 
+// Access the login page. If a user is already logged in redirects to /urls.
 app.get("/register", (req, res) => {
   const user = userDB[req.session.user_id];
   if (user) {
@@ -224,6 +240,7 @@ app.get("/register", (req, res) => {
   res.render("urls_register", templateVars);
 });
 
+// Starts server.
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
