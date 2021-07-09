@@ -9,9 +9,13 @@ TinyApp includes:
 
 ## Final Product
 
-!["screenshot description"](#)
+!["Home, prior to login"](https://github.com/Jamie-Huff/tinyapp/blob/master/docs/homepage-nologin.png?raw=true)
 
-!["screenshot description"](#)
+!["Homepage, logged in with created links"](https://github.com/Jamie-Huff/tinyapp/blob/master/docs/homepage-login.png?raw=true)
+
+!["Showcasing the create url feature"](https://github.com/Jamie-Huff/tinyapp/blob/master/docs/edit-file.png?raw=true)
+
+
 
 ## Dependencies
 
