@@ -4,7 +4,9 @@ const bodyParser = require("body-parser");
 const PORT = 8080;
 const app = express();
 const bcrypt = require('bcrypt');
-const userExistsChecker = require('./helpers');
+const helperFuncs = require('./helpers');
+const generateRandomString = helperFuncs.generateRandomString;
+const userExistsChecker = helperFuncs.userExistsChecker;
 
 app.use(bodyParser.urlencoded({extended: true}));
 
@@ -36,16 +38,6 @@ const userDB = {
     email: "test@email.com",
     hashedPassword: '$2b$10$ckDeYHTwTfVc8dZa2r8LaufDzmM.FgdJzz3xX6jgg3jFhHwmwSHbG'
   }
-};
-
-const generateRandomString = function() {
-  let result           = '';
-  let characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let charactersLength = characters.length;
-  for (let i = 0; i < 6; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-  return result;
 };
 
 app.get('/', (req, res) => {
@@ -80,13 +72,11 @@ app.post("/urls", (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
-  
   let user = userDB[req.session.user_id];
   let userID = '';
   if (user) {
     userID = user.id;
   }
- 
   let templateVars = { user, urls: []};
   for (const url in urlDatabase) {
     if (urlDatabase[url].userID === userID) {
