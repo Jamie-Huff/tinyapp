@@ -1,11 +1,10 @@
 const express = require("express");
-const cookieParser = require('cookie-parser');
-const cookieSession = require('cookie-session')
+const cookieSession = require('cookie-session');
 const bodyParser = require("body-parser");
 const PORT = 8080;
 const app = express();
 const bcrypt = require('bcrypt');
-const userExistsChecker = require('./helpers')
+const userExistsChecker = require('./helpers');
 
 app.use(bodyParser.urlencoded({extended: true}));
 
@@ -24,7 +23,7 @@ const urlDatabase = {
     longURL: "http://www.google.com",
     userID: 2
   },
-}
+};
 
 const userDB = {
   1: {
@@ -39,15 +38,6 @@ const userDB = {
   }
 };
 
-// const userExistsChecker = function(email, database) {
-//   for (const user in database) {
-//     if(database[user].email === email) {
-//       return true;
-//     }
-//   }
-//   return false;
-// };
-
 const generateRandomString = function() {
   let result           = '';
   let characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -58,18 +48,31 @@ const generateRandomString = function() {
   return result;
 };
 
+app.get('/', (req, res) => {
+  let user = userDB[req.session.user_id];
+  if (!user) {
+    res.redirect("/login");
+  } else {
+    res.redirect("/urls");
+  }
+});
+
 app.get(`/u/:shortURL`, (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL].longURL;
+  let longURL = urlDatabase[req.params.shortURL];
+  if (!urlDatabase[req.params.shortURL]) {
+    res.status(404).send('<h1>Error 404 - Page does not exist.</h1>');
+  }
+  longURL = longURL.longURL;
   res.redirect(longURL);
 });
 
 app.post("/urls", (req, res) => {
   let shortString = generateRandomString();
   let user = userDB[req.session.user_id];
-  user = user.id
+  user = user.id;
   if (!req.body.longURL.startsWith("http://")) {
     let starting = 'http://';
-    urlDatabase[shortString] = { longURL: starting + req.body.longURL, userID: user }
+    urlDatabase[shortString] = { longURL: starting + req.body.longURL, userID: user };
   } else {
     urlDatabase[shortString] = { longURL: req.body.longURL, userID: user};
   }
@@ -77,12 +80,14 @@ app.post("/urls", (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
+  
   let user = userDB[req.session.user_id];
-  let userID = ''
+  let userID = '';
   if (user) {
-    userID = user.id
+    userID = user.id;
   }
-  let templateVars = { user, urls: []}
+ 
+  let templateVars = { user, urls: []};
   for (const url in urlDatabase) {
     if (urlDatabase[url].userID === userID) {
       templateVars.urls.push({shortURL: url,longURL: urlDatabase[url].longURL});
@@ -93,32 +98,36 @@ app.get('/urls', (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   let user = userDB[req.session.user_id];
-  
   if (!user) {
-    return res.redirect("/login")
+    let templateVars = { user, };
+    templateVars.message = 'Please login, or create an account to access this feature.';
+    return res.render("urls_login", templateVars);
   }
-  user = user
+
   const templateVars = {
     urls: urlDatabase,
     user,
   };
-  res.render("urls_new", templateVars);
+  return res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
   // need to implement error message if you try to edit someone elses url
   const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL].longURL;
-  let user = userDB[req.session.user_id]
-  console.log(user)
-  if (!user) {
-    return res.redirect('/login')
+  console.log(shortURL);
+  console.log(urlDatabase[shortURL]);
+  let longURL = urlDatabase[shortURL];
+  if (!longURL) {
+    res.status(404).send('<h1>Error 404 - Page does not exist.</h1>');
   }
-  if (user.id !== urlDatabase[shortURL].userID) {
-    const templateVars = {user, error:"You don't have access to make changes to that URL"}
-    res.redirect("/login")
-    return
+  let user = userDB[req.session.user_id];
+
+  if (!user || user.id !== urlDatabase[shortURL].userID) {
+    //return res.redirect('/login')
+    return res.status(401).send('<h1>Error 401 - You are not authorized to access this page.</h1>');
   }
+
+  longURL = longURL.longURL;
   const templateVars = {
     shortURL,
     longURL,
@@ -132,26 +141,28 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.post(("/urls/:shortURL"), (req, res) => {
-  let user = userDB[req.session.user_id]
-  user = user.id
-  urlDatabase[req.params.shortURL] = { longURL: req.body.longURL, userID: user }
-  //need to fix
+  let user = userDB[req.session.user_id];
+  user = user.id;
+  // starts with
+  if (!req.body.longURL.startsWith("http://" || "https://")) {
+    req.body.longURL = `http://${req.body.longURL}`;
+  }
+  urlDatabase[req.params.shortURL] = { longURL: req.body.longURL, userID: user };
   res.redirect(`/urls/${req.params.shortURL}`);
 });
 
 app.post(("/urls/:shortURL/delete"), (req, res) => {
-  const user = userDB[req.session.user_id]
-  const shortURL = req.params.shortURL
-  const recordOwner = (urlDatabase[shortURL].userID)
+  const user = userDB[req.session.user_id];
+  console.log(user);
+  const shortURL = req.params.shortURL;
+  const recordOwner = (urlDatabase[shortURL].userID);
   if (!user) {
-    res.redirect('/login')
-    return
+    res.redirect('/login');
+    return;
   }
-  const userAttemptingAccess = user
+  const userAttemptingAccess = user.id;
   if (recordOwner !== userAttemptingAccess) {
-    const templateVars = {user, error:"You don't have access to make changes to that URL"}
-    res.redirect("/login")
-    return
+    return res.redirect("/login");
   }
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
@@ -159,6 +170,9 @@ app.post(("/urls/:shortURL/delete"), (req, res) => {
 
 app.get(("/login"), (req, res) => {
   const user = userDB[req.session.user_id];
+  if (user) {
+    return res.redirect("/urls");
+  }
   const templateVars = { user };
   templateVars.message = null;
   res.render("urls_login", templateVars);
@@ -173,21 +187,21 @@ app.post(("/login"), (req, res) => {
     //console.log(bcrypt.compareSync(attemptedLoginPassword, userDB[user].hashedPassword))
 
     if (userExistsChecker(attemptedLoginEmail, userDB) && userDB[user].email === attemptedLoginEmail) {
-      console.log('passed first condition')
+      console.log('passed first condition');
       if (bcrypt.compareSync(attemptedLoginPassword, userDB[user].hashedPassword)) {
-        console.log('passed both conditions')
-        req.session.user_id = user
+        console.log('passed both conditions');
+        req.session.user_id = user;
         // res.cookie("id", user); replace with line above
         res.redirect("/urls");
         return;
       } else {
-        console.log('passed 1st failed 2nd condition')
+        console.log('passed 1st failed 2nd condition');
         templateVars.message = "Error 403 - Password is invalid.";
         // need to make some error cookies
         return res.render("urls_login", templateVars);
       }
     } else if (!userExistsChecker(attemptedLoginEmail, userDB)) {
-      console.log('failed userExistChecker')
+      console.log('failed userExistChecker');
       templateVars.message = "Error 403 - Email is not associated with an account.";
       return res.render("urls_login", templateVars);
     }
@@ -196,7 +210,7 @@ app.post(("/login"), (req, res) => {
 
 app.post(("/logout"), (req, res) => {
   //res.clearCookie('id');
-  req.session = null
+  req.session = null;
   res.redirect("/urls");
 });
 
@@ -204,9 +218,8 @@ app.post("/register", (req, res) => {
   let userID = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
-  const hashedPassword = bcrypt.hashSync(password, 10)
+  const hashedPassword = bcrypt.hashSync(password, 10);
   const templateVars = { user: null};
-  console.log(hashedPassword)
 
   if (!email || !password) {
     templateVars.message = "Error 400 - Bad request - Email or Password fields cannot be empty.";
@@ -215,6 +228,7 @@ app.post("/register", (req, res) => {
   } else if (userExistsChecker(email, userDB)) {
     templateVars.message = "Email already associated with an account.";
     return res.render("urls_register", templateVars);
+    // res.status(403).send({ error: 'Email already associated with an account.' })
 
   } else {
     userDB[userID] = {
@@ -222,9 +236,8 @@ app.post("/register", (req, res) => {
       email: req.body.email,
       hashedPassword: hashedPassword
     };
-    console.log(userDB)
     //res.cookie("id", userID);
-    req.session.user_id = userID
+    req.session.user_id = userID;
     res.redirect("/urls");
   }
 
@@ -232,6 +245,9 @@ app.post("/register", (req, res) => {
 
 app.get("/register", (req, res) => {
   const user = userDB[req.session.user_id];
+  if (user) {
+    return res.redirect("/urls");
+  }
   const templateVars = { user };
   templateVars.message = null;
   res.render("urls_register", templateVars);
