@@ -112,10 +112,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  // need to implement error message if you try to edit someone elses url
   const shortURL = req.params.shortURL;
-  console.log(shortURL);
-  console.log(urlDatabase[shortURL]);
   let longURL = urlDatabase[shortURL];
   if (!longURL) {
     res.status(404).send('<h1>Error 404 - Page does not exist.</h1>');
@@ -123,7 +120,6 @@ app.get("/urls/:shortURL", (req, res) => {
   let user = userDB[req.session.user_id];
 
   if (!user || user.id !== urlDatabase[shortURL].userID) {
-    //return res.redirect('/login')
     return res.status(401).send('<h1>Error 401 - You are not authorized to access this page.</h1>');
   }
 
@@ -143,7 +139,6 @@ app.get("/urls.json", (req, res) => {
 app.post(("/urls/:shortURL"), (req, res) => {
   let user = userDB[req.session.user_id];
   user = user.id;
-  // starts with
   if (!req.body.longURL.startsWith("http://" || "https://")) {
     req.body.longURL = `http://${req.body.longURL}`;
   }
@@ -153,7 +148,6 @@ app.post(("/urls/:shortURL"), (req, res) => {
 
 app.post(("/urls/:shortURL/delete"), (req, res) => {
   const user = userDB[req.session.user_id];
-  console.log(user);
   const shortURL = req.params.shortURL;
   const recordOwner = (urlDatabase[shortURL].userID);
   if (!user) {
@@ -183,25 +177,15 @@ app.post(("/login"), (req, res) => {
   const attemptedLoginPassword = req.body.password;
   const templateVars = { user: null};
   for (const user in userDB) {
-    //console.log(attemptedLoginPassword, userDB[user].hashedPassword)
-    //console.log(bcrypt.compareSync(attemptedLoginPassword, userDB[user].hashedPassword))
-
     if (userExistsChecker(attemptedLoginEmail, userDB) && userDB[user].email === attemptedLoginEmail) {
-      console.log('passed first condition');
       if (bcrypt.compareSync(attemptedLoginPassword, userDB[user].hashedPassword)) {
-        console.log('passed both conditions');
         req.session.user_id = user;
-        // res.cookie("id", user); replace with line above
-        res.redirect("/urls");
-        return;
+        return res.redirect("/urls");
       } else {
-        console.log('passed 1st failed 2nd condition');
         templateVars.message = "Error 403 - Password is invalid.";
-        // need to make some error cookies
         return res.render("urls_login", templateVars);
       }
     } else if (!userExistsChecker(attemptedLoginEmail, userDB)) {
-      console.log('failed userExistChecker');
       templateVars.message = "Error 403 - Email is not associated with an account.";
       return res.render("urls_login", templateVars);
     }
@@ -209,7 +193,6 @@ app.post(("/login"), (req, res) => {
 });
 
 app.post(("/logout"), (req, res) => {
-  //res.clearCookie('id');
   req.session = null;
   res.redirect("/urls");
 });
@@ -226,9 +209,8 @@ app.post("/register", (req, res) => {
     return res.render("urls_register", templateVars);
 
   } else if (userExistsChecker(email, userDB)) {
-    templateVars.message = "Email already associated with an account.";
+    templateVars.message = "An account already exists for this email address.";
     return res.render("urls_register", templateVars);
-    // res.status(403).send({ error: 'Email already associated with an account.' })
 
   } else {
     userDB[userID] = {
@@ -236,7 +218,6 @@ app.post("/register", (req, res) => {
       email: req.body.email,
       hashedPassword: hashedPassword
     };
-    //res.cookie("id", userID);
     req.session.user_id = userID;
     res.redirect("/urls");
   }
@@ -256,21 +237,3 @@ app.get("/register", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
-
-
-/*
-Things to implement:
-1. Ensure users edit others urls, NEED: Error Message / error cookie
-2. Short URL doesn't work if it does not start with http://
-3. sessioncookies vs regular cookies
-  - npm install cookie-session
-  - const cookieSession = require('cookie-session')
-
-  - app.use(cookieSession({
-    name:"session"
-    keys: [""]
-
-
-  }))
-*/

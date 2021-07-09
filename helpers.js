@@ -7,4 +7,5 @@ const userExistsChecker = function(email, database) {
   return false;
 };
 
+
 module.exports = userExistsChecker
